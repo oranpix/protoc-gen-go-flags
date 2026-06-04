@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kunstack/protoc-gen-go-flags/flags"
 	pgs "github.com/lyft/protoc-gen-star/v2"
+	"github.com/oranpix/protoc-gen-go-flags/flags"
 )
 
 func (m *Module) genDuration(f pgs.Field, name pgs.Name, flag *flags.DurationFlag, wk pgs.WellKnownType) string {
@@ -16,9 +16,7 @@ func (m *Module) genDuration(f pgs.Field, name pgs.Name, flag *flags.DurationFla
 		return fmt.Sprintf("// %s: flags disabled by disabled=true\n", name)
 	}
 
-	if flag.GetName() == "" {
-		flag.Name = strings.ToLower(name.String())
-	}
+	flagName := m.flagName(name, flag)
 
 	_, _ = fmt.Fprintf(declBuilder, `
 			if x.%s  == nil {
@@ -31,11 +29,11 @@ func (m *Module) genDuration(f pgs.Field, name pgs.Name, flag *flags.DurationFla
 	_, _ = fmt.Fprintf(declBuilder, `
 			fs.VarP(types.Duration(x.%s), builder.Build(%q), %q, %q)
 		`,
-		name, flag.Name, flag.GetShort(), flag.GetUsage(),
+		name, flagName, flag.GetShort(), flag.GetUsage(),
 	)
 
 	// 添加可选的 flag 配置
-	_, _ = declBuilder.WriteString(m.genMark(flag))
+	_, _ = declBuilder.WriteString(m.genMark(flagName, flag))
 	return declBuilder.String()
 }
 
@@ -46,18 +44,16 @@ func (m *Module) genDurationSlice(f pgs.Field, name pgs.Name, flag *flags.Repeat
 		return fmt.Sprintf("// %s: flags disabled by disabled=true\n", name)
 	}
 
-	if flag.GetName() == "" {
-		flag.Name = strings.ToLower(name.String())
-	}
+	flagName := m.flagName(name, flag)
 
 	_, _ = fmt.Fprintf(declBuilder, `
 			fs.VarP(types.DurationSlice(&x.%s), builder.Build(%q), %q, %q)
 		`,
-		name, flag.Name, flag.GetShort(), flag.GetUsage(),
+		name, flagName, flag.GetShort(), flag.GetUsage(),
 	)
 
 	// 添加可选的 flag 配置
-	_, _ = declBuilder.WriteString(m.genMark(flag))
+	_, _ = declBuilder.WriteString(m.genMark(flagName, flag))
 	return declBuilder.String()
 }
 
@@ -104,7 +100,6 @@ func (m *Module) genDurationDefaults(f pgs.Field, name pgs.Name, flag *flags.Dur
 			x.%s = &durationpb.Duration{Seconds: %d, Nanos: %d}
 		}`, name, name, int64(secs), int32(nanos))
 
-	_, _ = declBuilder.WriteString(m.genMark(flag))
 	return declBuilder.String()
 }
 
@@ -114,20 +109,23 @@ func (m *Module) genDurationSliceDefaults(f pgs.Field, name pgs.Name, flag *flag
 		return ""
 	}
 
-	var code strings.Builder
+	defaultValues := make([]string, 0, len(flag.GetDefault()))
+	for _, defaultValue := range flag.Default {
+		duration, err := time.ParseDuration(defaultValue)
+		if err != nil {
+			m.Failf("duration default value '%s' is invalid: %v", defaultValue, err)
+			return ""
+		}
 
-	// Check if the slice is empty before setting defaults
-	code.WriteString(fmt.Sprintf(`
-	if len(x.%s) == 0 {`, name))
-
-	for i, defaultValue := range flag.Default {
-		varName := fmt.Sprintf("value%d", i)
-		code.WriteString(fmt.Sprintf(`
-		%s, _ := time.ParseDuration(%q)
-		x.%s = append(x.%s, %s)`, varName, defaultValue, name, name, varName))
+		nanos := duration.Nanoseconds()
+		secs := nanos / 1e9
+		nanos -= secs * 1e9
+		defaultValues = append(defaultValues, fmt.Sprintf("&durationpb.Duration{Seconds: %d, Nanos: %d}", int64(secs), int32(nanos)))
 	}
 
-	code.WriteString(`
-	}`)
-	return code.String()
+	return fmt.Sprintf(`
+		if len(x.%s) == 0 {
+			x.%s = %s{%s}
+		}
+	`, name, name, m.getFieldTypeName(f), strings.Join(defaultValues, ","))
 }

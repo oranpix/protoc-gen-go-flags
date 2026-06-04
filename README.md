@@ -1,7 +1,7 @@
 # protoc-gen-go-flags
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/kunstack/protoc-gen-go-flags)](https://goreportcard.com/report/github.com/kunstack/protoc-gen-go-flags)
-[![Go Reference](https://pkg.go.dev/badge/github.com/kunstack/protoc-gen-go-flags.svg)](https://pkg.go.dev/github.com/kunstack/protoc-gen-go-flags)
+[![Go Report Card](https://goreportcard.com/badge/github.com/oranpix/protoc-gen-go-flags)](https://goreportcard.com/report/github.com/oranpix/protoc-gen-go-flags)
+[![Go Reference](https://pkg.go.dev/badge/github.com/oranpix/protoc-gen-go-flags.svg)](https://pkg.go.dev/github.com/oranpix/protoc-gen-go-flags)
 
 [中文文档](README_zh.md) | English
 
@@ -95,7 +95,7 @@ Before getting started, ensure your development environment meets the following 
 Install the protoc-gen-go-flags plugin:
 
 ```bash
-go install github.com/kunstack/protoc-gen-go-flags@latest
+go install github.com/oranpix/protoc-gen-go-flags@latest
 ```
 
 Verify installation:
@@ -224,7 +224,7 @@ go get github.com/spf13/pflag
 go get google.golang.org/protobuf
 
 # Install protoc-gen-go-flags runtime library
-go get github.com/kunstack/protoc-gen-go-flags/flags
+go get github.com/oranpix/protoc-gen-go-flags/flags
 ```
 
 Create project structure:
@@ -248,7 +248,7 @@ Add the dependency in your `buf.yaml`:
 ```yaml
 version: v2
 deps:
-  - buf.build/kunstack/protoc-gen-go-flags
+  - buf.build/oranpix/protoc-gen-go-flags
 lint:
   use:
     - STANDARD
@@ -279,12 +279,12 @@ buf generate
 
 #### Option 2: Copy Files Directly
 
-Download the `annotations.proto` file from the [protoc-gen-go-flags repository](https://github.com/kunstack/protoc-gen-go-flags/tree/main/flags) to your project:
+Download the `annotations.proto` file from the [protoc-gen-go-flags repository](https://github.com/oranpix/protoc-gen-go-flags/tree/main/flags) to your project:
 
 ```bash
 mkdir -p proto/flags
 curl -o proto/flags/annotations.proto \
-  https://raw.githubusercontent.com/kunstack/protoc-gen-go-flags/main/flags/annotations.proto
+  https://raw.githubusercontent.com/oranpix/protoc-gen-go-flags/main/flags/annotations.proto
 ```
 
 Updated project structure:
@@ -635,7 +635,7 @@ proto/config.proto:3:1: Import "flags/annotations.proto" was not found.
 - **Using buf approach**: Ensure you ran `buf mod update` and that `buf.yaml` has the correct dependency:
   ```yaml
   deps:
-    - buf.build/kunstack/protoc-gen-go-flags
+    - buf.build/oranpix/protoc-gen-go-flags
   ```
 
 - **Using protoc approach**: Ensure the protoc command includes the correct import path:
@@ -653,9 +653,9 @@ undefined: types.Duration
 
 **Solution**: Ensure you have installed the runtime libraries:
 ```bash
-go get github.com/kunstack/protoc-gen-go-flags/flags
-go get github.com/kunstack/protoc-gen-go-flags/types
-go get github.com/kunstack/protoc-gen-go-flags/utils
+go get github.com/oranpix/protoc-gen-go-flags/flags
+go get github.com/oranpix/protoc-gen-go-flags/types
+go get github.com/oranpix/protoc-gen-go-flags/utils
 ```
 
 The generated code will automatically import these packages; no manual import needed.
@@ -684,7 +684,7 @@ Failure: plugin flags: not found
 **Solution**: Ensure protoc-gen-go-flags is installed and in PATH:
 ```bash
 # Install plugin
-go install github.com/kunstack/protoc-gen-go-flags@latest
+go install github.com/oranpix/protoc-gen-go-flags@latest
 
 # Verify installation
 which protoc-gen-go-flags
@@ -1207,7 +1207,7 @@ Generates: `--server-host` (converted to lowercase)
 ### Q: How do I integrate protoc-gen-go-flags into an existing project?
 
 **A:** Follow these steps:
-1. Install the plugin: `go install github.com/kunstack/protoc-gen-go-flags@latest`
+1. Install the plugin: `go install github.com/oranpix/protoc-gen-go-flags@latest`
 2. Copy `annotations.proto` to your project
 3. Add flag annotations to your `.proto` files
 4. Run `protoc` to generate code
@@ -1263,11 +1263,11 @@ config.AddFlags(fs,
 **A:** You need to install and import the runtime library:
 
 ```bash
-go get github.com/kunstack/protoc-gen-go-flags/flags
+go get github.com/oranpix/protoc-gen-go-flags/flags
 ```
 
 ```go
-import "github.com/kunstack/protoc-gen-go-flags/flags"
+import "github.com/oranpix/protoc-gen-go-flags/flags"
 ```
 
 ### Q: How do I skip flag generation for specific fields?
@@ -1345,7 +1345,7 @@ protoc \
 
 Contributions are welcome! If you have suggestions or find issues, please:
 
-- Submit an issue: [GitHub Issues](https://github.com/kunstack/protoc-gen-go-flags/issues)
+- Submit an issue: [GitHub Issues](https://github.com/oranpix/protoc-gen-go-flags/issues)
 - Submit a pull request: Fork the project and create a PR
 - Improve documentation: Help enhance documentation and examples
 

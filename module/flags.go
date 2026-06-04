@@ -4,23 +4,41 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kunstack/protoc-gen-go-flags/flags"
 	pgs "github.com/lyft/protoc-gen-star/v2"
+	"github.com/oranpix/protoc-gen-go-flags/flags"
 )
 
-func (m *Module) genMark(flag commonFlag) string {
+func (m *Module) flagName(name pgs.Name, flag commonFlag) string {
+	if flag.GetName() != "" {
+		return flag.GetName()
+	}
+	return strings.ToLower(name.String())
+}
+
+func (m *Module) fieldFlagName(f pgs.Field, flag commonFlag) string {
+	return m.flagName(m.ctx.Name(f), flag)
+}
+
+func (m *Module) messagePrefix(f pgs.Field, flag *flags.MessageFlag) string {
+	if flag.GetName() != "" {
+		return flag.GetName()
+	}
+	return strings.ToLower(f.Name().String())
+}
+
+func (m *Module) genMark(flagName string, flag commonFlag) string {
 	var declBuilder = &strings.Builder{}
 	if flag.GetHidden() {
 		_, _ = fmt.Fprintf(declBuilder, `
 				fs.MarkHidden(%q)
 			`,
-			flag.GetName())
+			flagName)
 	}
 	if flag.GetDeprecated() {
 		_, _ = fmt.Fprintf(declBuilder, `
 				fs.MarkDeprecated(%q, %q)
 			`,
-			flag.GetName(), flag.GetDeprecatedUsage())
+			flagName, flag.GetDeprecatedUsage())
 	}
 	return declBuilder.String()
 }
@@ -54,7 +72,7 @@ func (m *Module) processRepeatedFlag(f pgs.Field, name pgs.Name, repeated *flags
 	case *flags.RepeatedFlags_Fixed32:
 		return m.genCommonSlice(f, name, r.Fixed32, wk, "UInt32Slice", "Uint32SliceVarP")
 	case *flags.RepeatedFlags_Fixed64:
-		return m.genCommonSlice(f, name, r.Fixed64, wk, "UInt32Slice", "Uint64SliceVarP")
+		return m.genCommonSlice(f, name, r.Fixed64, wk, "UInt64Slice", "Uint64SliceVarP")
 	case *flags.RepeatedFlags_Sfixed32:
 		return m.genCommonSlice(f, name, r.Sfixed32, wk, "Int32Slice", "Int32SliceVarP")
 	case *flags.RepeatedFlags_Sfixed64:

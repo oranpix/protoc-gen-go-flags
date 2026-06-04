@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kunstack/protoc-gen-go-flags/flags"
 	pgs "github.com/lyft/protoc-gen-star/v2"
+	"github.com/oranpix/protoc-gen-go-flags/flags"
 )
 
 func (m *Module) checkEnum(ft pgs.FieldType, flag *flags.EnumFlag, pt pgs.ProtoType, wrapper pgs.WellKnownType) {
@@ -62,9 +62,7 @@ func (m *Module) genEnum(f pgs.Field, name pgs.Name, flag *flags.EnumFlag, wk pg
 		return fmt.Sprintf("// %s: flags disabled by disabled=true\n", name)
 	}
 
-	if flag.GetName() == "" {
-		flag.Name = strings.ToLower(name.String())
-	}
+	flagName := m.flagName(name, flag)
 
 	if f.HasOptionalKeyword() {
 		_, _ = fmt.Fprintf(declBuilder, `
@@ -75,20 +73,20 @@ func (m *Module) genEnum(f pgs.Field, name pgs.Name, flag *flags.EnumFlag, wk pg
 			name, name, m.getFieldTypeName(f),
 		)
 		_, _ = fmt.Fprintf(declBuilder, `
-			fs.VarP(types.Enum(x.%s), builder.Build(%q), %q, %q)
-		`,
-			name, flag.Name, flag.GetShort(), flag.GetUsage(),
+				fs.VarP(types.Enum(x.%s), builder.Build(%q), %q, %q)
+			`,
+			name, flagName, flag.GetShort(), flag.GetUsage(),
 		)
 	} else {
 		_, _ = fmt.Fprintf(declBuilder, `
-			fs.VarP(types.Enum(&x.%s), builder.Build(%q), %q, %q)
-		`,
-			name, flag.Name, flag.GetShort(), flag.GetUsage(),
+				fs.VarP(types.Enum(&x.%s), builder.Build(%q), %q, %q)
+			`,
+			name, flagName, flag.GetShort(), flag.GetUsage(),
 		)
 	}
 
 	// 添加可选的 flag 配置
-	_, _ = declBuilder.WriteString(m.genMark(flag))
+	_, _ = declBuilder.WriteString(m.genMark(flagName, flag))
 	return declBuilder.String()
 }
 
@@ -99,17 +97,15 @@ func (m *Module) genEnumSlice(f pgs.Field, name pgs.Name, flag *flags.RepeatedEn
 		return fmt.Sprintf("// %s: flags disabled by disabled=true\n", name)
 	}
 
-	if flag.GetName() == "" {
-		flag.Name = strings.ToLower(name.String())
-	}
+	flagName := m.flagName(name, flag)
 
 	_, _ = fmt.Fprintf(declBuilder, `
 			fs.VarP(types.EnumSlice(&x.%s), builder.Build(%q), %q, %q)
 		`,
-		name, flag.Name, flag.GetShort(), flag.GetUsage(),
+		name, flagName, flag.GetShort(), flag.GetUsage(),
 	)
 
 	// 添加可选的 flag 配置
-	_, _ = declBuilder.WriteString(m.genMark(flag))
+	_, _ = declBuilder.WriteString(m.genMark(flagName, flag))
 	return declBuilder.String()
 }

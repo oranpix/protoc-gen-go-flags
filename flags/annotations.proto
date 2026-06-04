@@ -69,7 +69,7 @@ package flags;
 import "google/protobuf/descriptor.proto";
 
 // buf:lint:ignore PACKAGE_SAME_GO_PACKAGE
-option go_package = "github.com/kunstack/protoc-gen-go-flags/flags;flags";
+option go_package = "github.com/oranpix/protoc-gen-go-flags/flags;flags";
 
 // MessageOptions extends google.protobuf.MessageOptions to provide message-level
 // control over flag generation behavior.

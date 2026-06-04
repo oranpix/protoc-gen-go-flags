@@ -1,6 +1,6 @@
 version: v2
 deps:
-  - buf.build/kunstack/protoc-gen-go-flags
+  - buf.build/oranpix/protoc-gen-go-flags
 lint:
   use:
     - STANDARD

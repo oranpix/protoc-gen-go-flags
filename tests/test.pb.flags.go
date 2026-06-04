@@ -3,18 +3,18 @@
 package tests
 
 import (
-	"github.com/kunstack/protoc-gen-go-flags/flags"
-	"github.com/kunstack/protoc-gen-go-flags/types"
-	"github.com/kunstack/protoc-gen-go-flags/utils"
+	"github.com/oranpix/protoc-gen-go-flags/flags"
+	"github.com/oranpix/protoc-gen-go-flags/types"
+	"github.com/oranpix/protoc-gen-go-flags/utils"
 	"github.com/spf13/pflag"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	types1 "github.com/kunstack/protoc-gen-go-flags/tests/types"
-	utils1 "github.com/kunstack/protoc-gen-go-flags/tests/utils"
-	utils2 "github.com/kunstack/protoc-gen-go-flags/tests/utils/utils"
-	wrapperspb1 "github.com/kunstack/protoc-gen-go-flags/tests/wrapperspb"
+	types1 "github.com/oranpix/protoc-gen-go-flags/tests/types"
+	utils1 "github.com/oranpix/protoc-gen-go-flags/tests/utils"
+	utils2 "github.com/oranpix/protoc-gen-go-flags/tests/utils/utils"
+	wrapperspb1 "github.com/oranpix/protoc-gen-go-flags/tests/wrapperspb"
 )
 
 var (
@@ -84,19 +84,23 @@ func (x *TestForMessage) AddFlags(fs *pflag.FlagSet, opts ...flags.Option) {
 
 	fs.BytesHexVarP(&x.Byte, builder.Build("byte"), "b", x.Byte, "Byte data in base64 encoding")
 
-	fs.BytesBase64VarP(&x.ConfigData, builder.Build("config-data"), "cd", x.ConfigData, "Configuration data in base64 format")
+	fs.BytesBase64VarP(&x.ConfigData, builder.Build("config-data"), "", x.ConfigData, "Configuration data in base64 format")
 
-	fs.BytesHexVarP(&x.SecretKey, builder.Build("secret-key"), "sk", x.SecretKey, "Secret key in hex format")
+	fs.BytesHexVarP(&x.SecretKey, builder.Build("secret-key"), "", x.SecretKey, "Secret key in hex format")
 
 	fs.MarkHidden("secret-key")
 
-	fs.VarP(types.BytesSlice(&x.FileChunks), builder.Build("file-chunks"), "fc", "File chunks in base64 format")
+	fs.VarP(types.BytesSlice(&x.FileChunks), builder.Build("file-chunks"), "", "File chunks in base64 format")
 
-	fs.VarP(types.BytesHexSlice(&x.HexChunks), builder.Build("hex-chunks"), "hc", "Data chunks in hex format")
+	fs.VarP(types.BytesHexSlice(&x.HexChunks), builder.Build("hex-chunks"), "", "Data chunks in hex format")
 
-	fs.VarP(types.BytesSlice(&x.Base64Defaults), builder.Build("base64-defaults"), "bd", "Default base64 encoded values")
+	fs.VarP(types.BytesSlice(&x.Base64Defaults), builder.Build("base64-defaults"), "", "Default base64 encoded values")
 
-	fs.VarP(types.BytesHexSlice(&x.HexDefaults), builder.Build("hex-defaults"), "hd", "Default hex encoded values")
+	fs.VarP(types.BytesHexSlice(&x.HexDefaults), builder.Build("hex-defaults"), "", "Default hex encoded values")
+
+	fs.VarP(types.Uint64Slice(&x.Fixed64Values), builder.Build("fixed64-values"), "", "Repeated fixed64 values")
+
+	fs.VarP(types.Uint32Slice(&x.Uint32Values), builder.Build("uint32-values"), "", "Repeated uint32 values")
 
 	fs.VarP(types.EnumSlice(&x.TestEnum), builder.Build("test-enum"), "e", "Test enum field")
 
@@ -118,29 +122,29 @@ func (x *TestForMessage) AddFlags(fs *pflag.FlagSet, opts ...flags.Option) {
 
 	fs.VarP(types.JSON(&x.Counters), builder.Build("counters"), "", "String-to-integer counters (JSON format)")
 
-	fs.StringToStringVarP(&x.StringMap, builder.Build("string-map"), "sm", x.StringMap, "String-to-string map using native format")
+	fs.StringToStringVarP(&x.StringMap, builder.Build("string-map"), "", x.StringMap, "String-to-string map using native format")
 
-	fs.VarP(types.StringToInt32(&x.Int32Map), builder.Build("int32-map"), "i32", "String-to-int32 map using native format")
+	fs.VarP(types.StringToInt32(&x.Int32Map), builder.Build("int32-map"), "", "String-to-int32 map using native format")
 
-	fs.StringToInt64VarP(&x.Int64Map, builder.Build("int64-map"), "i64", x.Int64Map, "String-to-int64 map using native format")
+	fs.StringToInt64VarP(&x.Int64Map, builder.Build("int64-map"), "", x.Int64Map, "String-to-int64 map using native format")
 
-	fs.VarP(types.StringToUint32(&x.Uint32Map), builder.Build("uint32-map"), "u32", "String-to-uint32 map using native format")
+	fs.VarP(types.StringToUint32(&x.Uint32Map), builder.Build("uint32-map"), "", "String-to-uint32 map using native format")
 
-	fs.VarP(types.StringToUint64(&x.Uint64Map), builder.Build("uint64-map"), "u64", "String-to-uint64 map using native format")
+	fs.VarP(types.StringToUint64(&x.Uint64Map), builder.Build("uint64-map"), "", "String-to-uint64 map using native format")
 
-	fs.VarP(types.StringToInt32(&x.Sfixed32Map), builder.Build("sfixed32-map"), "sf32", "String-to-sfixed32 map using native format")
+	fs.VarP(types.StringToInt32(&x.Sfixed32Map), builder.Build("sfixed32-map"), "", "String-to-sfixed32 map using native format")
 
-	fs.StringToInt64VarP(&x.Sfixed64Map, builder.Build("sfixed64-map"), "sf64", x.Sfixed64Map, "String-to-sfixed64 map using native format")
+	fs.StringToInt64VarP(&x.Sfixed64Map, builder.Build("sfixed64-map"), "", x.Sfixed64Map, "String-to-sfixed64 map using native format")
 
 	fs.VarP(types.JSON(&x.JsonMap), builder.Build("json-map"), "j", "Generic JSON map format")
 
-	fs.StringSliceVarP(&x.RepeatedStrings, builder.Build("repeated-strings"), "rs", x.RepeatedStrings, "Repeated strings for comparison")
+	fs.StringSliceVarP(&x.RepeatedStrings, builder.Build("repeated-strings"), "", x.RepeatedStrings, "Repeated strings for comparison")
 
-	fs.VarP(types.DurationSlice(&x.Delays), builder.Build("delays"), "d", "Delay durations (e.g., 1s, 2m, 3h)")
+	fs.VarP(types.DurationSlice(&x.Delays), builder.Build("delays"), "", "Delay durations (e.g., 1s, 2m, 3h)")
 
 	fs.VarP(types.DurationSlice(&x.Intervals), builder.Build("intervals"), "i", "Time intervals between events")
 
-	fs.VarP(types.DurationSlice(&x.Timeouts), builder.Build("timeouts"), "t", "Timeout durations for operations")
+	fs.VarP(types.DurationSlice(&x.Timeouts), builder.Build("timeouts"), "", "Timeout durations for operations")
 
 	if x.NestedTest == nil {
 		x.NestedTest = new(utils2.NestedMessage)
@@ -189,6 +193,14 @@ func (x *TestForMessage) SetDefaults() {
 	if len(x.HexDefaults) == 0 {
 		x.HexDefaults = [][]byte{utils.MustDecodeHex("48656c6c6f20576f726c64"), utils.MustDecodeHex("546573742044617461"), utils.MustDecodeHex("53616d706c6520436f6e74656e74")}
 	}
+	if len(x.Fixed64Values) == 0 {
+		x.Fixed64Values = []uint64{1, 2}
+	}
+
+	if len(x.Uint32Values) == 0 {
+		x.Uint32Values = []uint32{1, 4294967295}
+	}
+
 	if len(x.TestEnum) == 0 {
 		x.TestEnum = []TestEnum1{1, 3}
 	}
@@ -250,29 +262,29 @@ func (x *WrapperValueMessage) AddFlags(fs *pflag.FlagSet, opts ...flags.Option) 
 	if x.DoubleValue == nil {
 		x.DoubleValue = new(wrapperspb.DoubleValue)
 	}
-	fs.VarP(types.Double(x.DoubleValue), builder.Build("double-value"), "dv", "Double value wrapper")
+	fs.VarP(types.Double(x.DoubleValue), builder.Build("double-value"), "", "Double value wrapper")
 
-	fs.VarP(types.DoubleSlice(&x.DoubleValues), builder.Build("double-values"), "dvs", "Multiple double values")
+	fs.VarP(types.DoubleSlice(&x.DoubleValues), builder.Build("double-values"), "", "Multiple double values")
 
 	if x.BytesValue == nil {
 		x.BytesValue = new(wrapperspb.BytesValue)
 	}
 
-	fs.VarP(types.Bytes(x.BytesValue), builder.Build("bytes-value"), "bv", "Bytes value wrapper (base64 encoded)")
+	fs.VarP(types.Bytes(x.BytesValue), builder.Build("bytes-value"), "", "Bytes value wrapper (base64 encoded)")
 
 	if x.BytesValues == nil {
 		x.BytesValues = new(wrapperspb.BytesValue)
 	}
 
-	fs.VarP(types.Bytes(x.BytesValues), builder.Build("bytes-values"), "bvs", "Multiple bytes values (base64 encoded)")
+	fs.VarP(types.Bytes(x.BytesValues), builder.Build("bytes-values"), "", "Multiple bytes values (base64 encoded)")
 
-	fs.VarP(types.BytesHexSlice(&x.BytesHexValues), builder.Build("bytes-hex-values666"), "bhx", "Multiple bytes values (hex encoded)")
+	fs.VarP(types.BytesHexSlice(&x.BytesHexValues), builder.Build("bytes-hex-values666"), "", "Multiple bytes values (hex encoded)")
 
 	if x.BytesHexValuesx == nil {
 		x.BytesHexValuesx = new(wrapperspb.BytesValue)
 	}
 
-	fs.VarP(types.Bytes(x.BytesHexValuesx), builder.Build("bytes-hex-values"), "bhx", "Multiple bytes values (hex encoded)")
+	fs.VarP(types.Bytes(x.BytesHexValuesx), builder.Build("bytes-hex-values"), "", "Multiple bytes values (hex encoded)")
 
 }
 
@@ -293,7 +305,7 @@ func (x *DoubleSliceTestMessage) AddFlags(fs *pflag.FlagSet, opts ...flags.Optio
 	_ = builder
 	fs.VarP(types.DoubleSlice(&x.Measurements), builder.Build("measurements"), "m", "Scientific measurements (e.g., 3.14159, 2.71828, 1.41421)")
 
-	fs.VarP(types.DoubleSlice(&x.ScientificValues), builder.Build("scientific-values"), "sv", "Scientific notation values (e.g., 1.23e-4, 5.67e+8)")
+	fs.VarP(types.DoubleSlice(&x.ScientificValues), builder.Build("scientific-values"), "", "Scientific notation values (e.g., 1.23e-4, 5.67e+8)")
 
 	fs.VarP(types.DoubleSlice(&x.TemperatureReadings), builder.Build("temperature-readings"), "t", "Temperature readings in Celsius")
 
@@ -307,13 +319,13 @@ func (x *DoubleSliceTestMessage) SetDefaults() {
 func (x *BytesSliceTestMessage) AddFlags(fs *pflag.FlagSet, opts ...flags.Option) {
 	builder := flags.NewNameBuilder(opts...)
 	_ = builder
-	fs.VarP(types.BytesSlice(&x.DataChunks), builder.Build("data-chunks"), "dc", "Data chunks in base64 format")
+	fs.VarP(types.BytesSlice(&x.DataChunks), builder.Build("data-chunks"), "", "Data chunks in base64 format")
 
-	fs.VarP(types.BytesSlice(&x.FileContents), builder.Build("file-contents"), "fc", "File contents in base64 format")
+	fs.VarP(types.BytesSlice(&x.FileContents), builder.Build("file-contents"), "", "File contents in base64 format")
 
-	fs.VarP(types.BytesHexSlice(&x.HexData), builder.Build("hex-data"), "hd", "Data in hexadecimal format")
+	fs.VarP(types.BytesHexSlice(&x.HexData), builder.Build("hex-data"), "", "Data in hexadecimal format")
 
-	fs.VarP(types.BytesHexSlice(&x.BinaryPayloads), builder.Build("binary-payloads"), "bp", "Binary payloads in hex format")
+	fs.VarP(types.BytesHexSlice(&x.BinaryPayloads), builder.Build("binary-payloads"), "", "Binary payloads in hex format")
 
 }
 
@@ -345,23 +357,23 @@ func (x *FloatValueTestMessage) AddFlags(fs *pflag.FlagSet, opts ...flags.Option
 	if x.SingleValue == nil {
 		x.SingleValue = new(wrapperspb.FloatValue)
 	}
-	fs.VarP(types.Float(x.SingleValue), builder.Build("single-value"), "sv", "Single float value wrapper")
+	fs.VarP(types.Float(x.SingleValue), builder.Build("single-value"), "", "Single float value wrapper")
 
-	fs.VarP(types.FloatSlice(&x.FloatValues), builder.Build("float-values"), "fvs", "Multiple FloatValue wrapper instances")
+	fs.VarP(types.FloatSlice(&x.FloatValues), builder.Build("float-values"), "", "Multiple FloatValue wrapper instances")
 
 	if x.Temperature == nil {
 		x.Temperature = new(wrapperspb.FloatValue)
 	}
-	fs.VarP(types.Float(x.Temperature), builder.Build("temperature"), "temp", "Temperature in Celsius")
+	fs.VarP(types.Float(x.Temperature), builder.Build("temperature"), "", "Temperature in Celsius")
 
-	fs.VarP(types.FloatSlice(&x.SensorReadings), builder.Build("sensor-readings"), "sr", "Multiple sensor readings")
+	fs.VarP(types.FloatSlice(&x.SensorReadings), builder.Build("sensor-readings"), "", "Multiple sensor readings")
 
 	if x.Probability == nil {
 		x.Probability = new(wrapperspb.FloatValue)
 	}
-	fs.VarP(types.Float(x.Probability), builder.Build("probability"), "prob", "Probability value (0.0 to 1.0)")
+	fs.VarP(types.Float(x.Probability), builder.Build("probability"), "", "Probability value (0.0 to 1.0)")
 
-	fs.VarP(types.FloatSlice(&x.Scores), builder.Build("scores"), "sc", "Multiple score values")
+	fs.VarP(types.FloatSlice(&x.Scores), builder.Build("scores"), "", "Multiple score values")
 
 }
 
@@ -524,21 +536,21 @@ func (x *StringValueTestMessage) AddFlags(fs *pflag.FlagSet, opts ...flags.Optio
 	if x.SingleValue == nil {
 		x.SingleValue = new(wrapperspb.StringValue)
 	}
-	fs.VarP(types.String(x.SingleValue), builder.Build("single-value"), "sv", "Single string value wrapper")
+	fs.VarP(types.String(x.SingleValue), builder.Build("single-value"), "", "Single string value wrapper")
 
-	fs.VarP(types.StringSlice(&x.StringValues), builder.Build("string-values"), "svs", "Multiple StringValue wrapper instances")
+	fs.VarP(types.StringSlice(&x.StringValues), builder.Build("string-values"), "", "Multiple StringValue wrapper instances")
 
 	if x.ConfigPath == nil {
 		x.ConfigPath = new(wrapperspb.StringValue)
 	}
-	fs.VarP(types.String(x.ConfigPath), builder.Build("config-path"), "cfg", "Configuration file path")
+	fs.VarP(types.String(x.ConfigPath), builder.Build("config-path"), "", "Configuration file path")
 
-	fs.VarP(types.StringSlice(&x.IncludePaths), builder.Build("include-paths"), "inc", "Include paths for configuration")
+	fs.VarP(types.StringSlice(&x.IncludePaths), builder.Build("include-paths"), "", "Include paths for configuration")
 
 	if x.Environment == nil {
 		x.Environment = new(wrapperspb.StringValue)
 	}
-	fs.VarP(types.String(x.Environment), builder.Build("environment"), "env", "Environment name")
+	fs.VarP(types.String(x.Environment), builder.Build("environment"), "", "Environment name")
 
 	fs.VarP(types.StringSlice(&x.Tags), builder.Build("tags"), "t", "Multiple tags for categorization")
 
@@ -565,30 +577,32 @@ func (x *IntegerValueTestMessage) AddFlags(fs *pflag.FlagSet, opts ...flags.Opti
 	if x.Int32Value == nil {
 		x.Int32Value = new(wrapperspb.Int32Value)
 	}
-	fs.VarP(types.Int32(x.Int32Value), builder.Build("int32-value"), "i32", "Int32 value wrapper")
+	fs.VarP(types.Int32(x.Int32Value), builder.Build("int32-value"), "", "Int32 value wrapper")
 
 	if x.Int64Value == nil {
 		x.Int64Value = new(wrapperspb.Int64Value)
 	}
-	fs.VarP(types.Int64(x.Int64Value), builder.Build("int64-value"), "i64", "Int64 value wrapper")
+	fs.VarP(types.Int64(x.Int64Value), builder.Build("int64-value"), "", "Int64 value wrapper")
 
 	if x.Uint32Value == nil {
 		x.Uint32Value = new(wrapperspb.UInt32Value)
 	}
-	fs.VarP(types.UInt32(x.Uint32Value), builder.Build("uint32-value"), "u32", "UInt32 value wrapper")
+	fs.VarP(types.UInt32(x.Uint32Value), builder.Build("uint32-value"), "", "UInt32 value wrapper")
 
 	if x.Uint64Value == nil {
 		x.Uint64Value = new(wrapperspb.UInt64Value)
 	}
-	fs.VarP(types.UInt64(x.Uint64Value), builder.Build("uint64-value"), "u64", "UInt64 value wrapper")
+	fs.VarP(types.UInt64(x.Uint64Value), builder.Build("uint64-value"), "", "UInt64 value wrapper")
 
-	fs.VarP(types.Int32Slice(&x.Int32Values), builder.Build("int32-values"), "i32s", "Multiple Int32 value wrapper instances")
+	fs.VarP(types.Int32Slice(&x.Int32Values), builder.Build("int32-values"), "", "Multiple Int32 value wrapper instances")
 
-	fs.VarP(types.Int64Slice(&x.Int64Values), builder.Build("int64-values"), "i64s", "Multiple Int64 value wrapper instances")
+	fs.VarP(types.Int64Slice(&x.Int64Values), builder.Build("int64-values"), "", "Multiple Int64 value wrapper instances")
 
-	fs.VarP(types.FloatSlice(&x.Float64Values), builder.Build("int64-valuesx"), "i64s", "Multiple FloatValue wrapper instances")
+	fs.VarP(types.FloatSlice(&x.Float64Values), builder.Build("int64-valuesx"), "", "Multiple FloatValue wrapper instances")
 
-	fs.Float64SliceVarP(&x.DoubleValues, builder.Build("double-valuesx"), "i64sx", x.DoubleValues, "Multiple double value instances")
+	fs.Float64SliceVarP(&x.DoubleValues, builder.Build("double-valuesx"), "", x.DoubleValues, "Multiple double value instances")
+
+	fs.VarP(types.UInt64Slice(&x.Uint64Values), builder.Build("uint64-values"), "", "Multiple UInt64 value wrapper instances")
 
 }
 
@@ -621,6 +635,10 @@ func (x *IntegerValueTestMessage) SetDefaults() {
 		x.DoubleValues = []float64{1.000000, 2.000000}
 	}
 
+	if len(x.Uint64Values) == 0 {
+		x.Uint64Values = []*wrapperspb.UInt64Value{{Value: 1}, {Value: 18446744073709551615}}
+	}
+
 }
 
 func (x *BoolValueTestMessage) AddFlags(fs *pflag.FlagSet, opts ...flags.Option) {
@@ -629,23 +647,23 @@ func (x *BoolValueTestMessage) AddFlags(fs *pflag.FlagSet, opts ...flags.Option)
 	if x.SingleValue == nil {
 		x.SingleValue = new(wrapperspb.BoolValue)
 	}
-	fs.VarP(types.Bool(x.SingleValue), builder.Build("single-value"), "sv", "Single boolean value wrapper")
+	fs.VarP(types.Bool(x.SingleValue), builder.Build("single-value"), "", "Single boolean value wrapper")
 
-	fs.VarP(types.BoolSlice(&x.BoolValues), builder.Build("bool-values"), "bvs", "Multiple BoolValue wrapper instances")
+	fs.VarP(types.BoolSlice(&x.BoolValues), builder.Build("bool-values"), "", "Multiple BoolValue wrapper instances")
 
 	if x.EnableFeature == nil {
 		x.EnableFeature = new(wrapperspb.BoolValue)
 	}
-	fs.VarP(types.Bool(x.EnableFeature), builder.Build("enable-feature"), "feat", "Enable experimental feature")
+	fs.VarP(types.Bool(x.EnableFeature), builder.Build("enable-feature"), "", "Enable experimental feature")
 
-	fs.VarP(types.BoolSlice(&x.FeatureFlags), builder.Build("feature-flags"), "ff", "Multiple feature flags")
+	fs.VarP(types.BoolSlice(&x.FeatureFlags), builder.Build("feature-flags"), "", "Multiple feature flags")
 
 	if x.VerboseLogging == nil {
 		x.VerboseLogging = new(wrapperspb.BoolValue)
 	}
-	fs.VarP(types.Bool(x.VerboseLogging), builder.Build("verbose-logging"), "verbose", "Enable verbose logging")
+	fs.VarP(types.Bool(x.VerboseLogging), builder.Build("verbose-logging"), "", "Enable verbose logging")
 
-	fs.VarP(types.BoolSlice(&x.DebugOptions), builder.Build("debug-options"), "dbg", "Multiple debug option flags")
+	fs.VarP(types.BoolSlice(&x.DebugOptions), builder.Build("debug-options"), "", "Multiple debug option flags")
 
 }
 
@@ -673,17 +691,17 @@ func (x *ComprehensiveFlagTestMessage) AddFlags(fs *pflag.FlagSet, opts ...flags
 
 	fs.MarkHidden("password")
 
-	fs.StringVarP(&x.LegacyToken, builder.Build("legacy-token"), "lt", x.LegacyToken, "Legacy authentication token")
+	fs.StringVarP(&x.LegacyToken, builder.Build("legacy-token"), "", x.LegacyToken, "Legacy authentication token")
 
 	fs.MarkDeprecated("legacy-token", "Use --api-key instead")
 
-	fs.Int32VarP(&x.ConnectionCount, builder.Build("connection-count"), "cc", x.ConnectionCount, "Number of concurrent connections")
+	fs.Int32VarP(&x.ConnectionCount, builder.Build("connection-count"), "", x.ConnectionCount, "Number of concurrent connections")
 
-	fs.Int32VarP(&x.MaxThreads, builder.Build("max-threads"), "mt", x.MaxThreads, "Maximum number of threads")
+	fs.Int32VarP(&x.MaxThreads, builder.Build("max-threads"), "", x.MaxThreads, "Maximum number of threads")
 
 	fs.MarkDeprecated("max-threads", "Use --worker-count instead")
 
-	fs.BoolVarP(&x.ExperimentalMode, builder.Build("experimental-mode"), "exp", x.ExperimentalMode, "Enable experimental features")
+	fs.BoolVarP(&x.ExperimentalMode, builder.Build("experimental-mode"), "", x.ExperimentalMode, "Enable experimental features")
 
 	fs.MarkHidden("experimental-mode")
 
@@ -809,17 +827,17 @@ func (x *NestedLevel2Message) SetDefaults() {
 func (x *ComprehensiveMapTestMessage) AddFlags(fs *pflag.FlagSet, opts ...flags.Option) {
 	builder := flags.NewNameBuilder(opts...)
 	_ = builder
-	fs.VarP(types.JSON(&x.JsonLabels), builder.Build("json-labels"), "jl", "Labels in JSON format")
+	fs.VarP(types.JSON(&x.JsonLabels), builder.Build("json-labels"), "", "Labels in JSON format")
 
-	fs.StringToStringVarP(&x.NativeLabels, builder.Build("native-labels"), "nl", x.NativeLabels, "Labels in native format")
+	fs.StringToStringVarP(&x.NativeLabels, builder.Build("native-labels"), "", x.NativeLabels, "Labels in native format")
 
-	fs.VarP(types.StringToInt32(&x.DefaultCounters), builder.Build("default-counters"), "dc", "Default counter values")
+	fs.VarP(types.StringToInt32(&x.DefaultCounters), builder.Build("default-counters"), "", "Default counter values")
 
-	fs.VarP(types.JSON(&x.LegacyConfig), builder.Build("legacy-config"), "lc", "Legacy configuration map")
+	fs.VarP(types.JSON(&x.LegacyConfig), builder.Build("legacy-config"), "", "Legacy configuration map")
 
 	fs.MarkDeprecated("legacy-config", "Use --new-config instead")
 
-	fs.VarP(types.JSON(&x.SecretConfig), builder.Build("secret-config"), "sc", "Secret configuration map")
+	fs.VarP(types.JSON(&x.SecretConfig), builder.Build("secret-config"), "", "Secret configuration map")
 
 	fs.MarkHidden("secret-config")
 
@@ -831,15 +849,15 @@ func (x *ComprehensiveMapTestMessage) SetDefaults() {
 func (x *TimestampSliceTestMessage) AddFlags(fs *pflag.FlagSet, opts ...flags.Option) {
 	builder := flags.NewNameBuilder(opts...)
 	_ = builder
-	fs.VarP(types.TimestampSlice(&x.EventTimes, []string{"RFC3339"}), builder.Build("event-times"), "et", "Event timestamps (e.g., 2023-01-01T00:00:00Z, 2023-12-31T23:59:59Z)")
+	fs.VarP(types.TimestampSlice(&x.EventTimes, []string{"RFC3339"}), builder.Build("event-times"), "", "Event timestamps (e.g., 2023-01-01T00:00:00Z, 2023-12-31T23:59:59Z)")
 
-	fs.VarP(types.TimestampSlice(&x.LogTimestamps, []string{"RFC3339"}), builder.Build("log-timestamps"), "lt", "Log entry timestamps in RFC3339 format")
+	fs.VarP(types.TimestampSlice(&x.LogTimestamps, []string{"RFC3339"}), builder.Build("log-timestamps"), "", "Log entry timestamps in RFC3339 format")
 
-	fs.VarP(types.TimestampSlice(&x.ScheduledTasks, []string{"RFC3339"}), builder.Build("scheduled-tasks"), "st", "Scheduled task execution times")
+	fs.VarP(types.TimestampSlice(&x.ScheduledTasks, []string{"RFC3339"}), builder.Build("scheduled-tasks"), "", "Scheduled task execution times")
 
-	fs.VarP(types.TimestampSlice(&x.BackupTimes, []string{"RFC3339"}), builder.Build("backup-times"), "bt", "Backup schedule timestamps (e.g., 2024-01-01T02:00:00Z)")
+	fs.VarP(types.TimestampSlice(&x.BackupTimes, []string{"RFC3339"}), builder.Build("backup-times"), "", "Backup schedule timestamps (e.g., 2024-01-01T02:00:00Z)")
 
-	fs.VarP(types.TimestampSlice(&x.CustomFormatTimes, []string{"RFC3339", "ISO8601", "RFC822"}), builder.Build("custom-format-times"), "cft", "Custom format timestamps")
+	fs.VarP(types.TimestampSlice(&x.CustomFormatTimes, []string{"RFC3339", "ISO8601", "RFC822"}), builder.Build("custom-format-times"), "", "Custom format timestamps")
 
 }
 
@@ -853,19 +871,27 @@ func (x *TimestampSliceTestMessage) SetDefaults() {
 func (x *RepeatedBytesTestMessage) AddFlags(fs *pflag.FlagSet, opts ...flags.Option) {
 	builder := flags.NewNameBuilder(opts...)
 	_ = builder
-	fs.VarP(types.BytesSlice(&x.Base64Chunks), builder.Build("base64-chunks"), "b64", "Data chunks in base64 format")
+	fs.VarP(types.BytesSlice(&x.Base64Chunks), builder.Build("base64-chunks"), "", "Data chunks in base64 format")
 
-	fs.VarP(types.BytesHexSlice(&x.HexChunks), builder.Build("hex-chunks"), "hx", "Data chunks in hex format")
+	fs.VarP(types.BytesHexSlice(&x.HexChunks), builder.Build("hex-chunks"), "", "Data chunks in hex format")
 
-	fs.VarP(types.BytesSlice(&x.DefaultBase64), builder.Build("default-base64"), "db64", "Default base64 encoded values")
+	fs.VarP(types.BytesSlice(&x.DefaultBase64), builder.Build("default-base64"), "", "Default base64 encoded values")
 
-	fs.VarP(types.BytesHexSlice(&x.DefaultHex), builder.Build("default-hex"), "dhx", "Default hex encoded values")
+	fs.VarP(types.BytesHexSlice(&x.DefaultHex), builder.Build("default-hex"), "", "Default hex encoded values")
 
-	fs.VarP(types.BytesSlice(&x.RawChunks), builder.Build("raw-chunks"), "rc", "Raw data chunks (defaults to base64)")
+	fs.VarP(types.BytesSlice(&x.RawChunks), builder.Build("raw-chunks"), "", "Raw data chunks (defaults to base64)")
 
-	fs.VarP(types.BytesHexSlice(&x.MixedHex), builder.Build("mixed-hex"), "mh", "Mixed case hex data")
+	fs.VarP(types.BytesHexSlice(&x.MixedHex), builder.Build("mixed-hex"), "", "Mixed case hex data")
 
-	fs.VarP(types.BytesSlice(&x.SpecialB64), builder.Build("special_b64"), "sb64", "Special character base64 data")
+	fs.VarP(types.BytesSlice(&x.SpecialB64), builder.Build("special_b64"), "", "Special character base64 data")
+
+	fs.BytesBase64VarP(&x.ImplicitSecret, builder.Build("implicitsecret"), "", x.ImplicitSecret, "Bytes flag without an explicit name")
+
+	fs.MarkHidden("implicitsecret")
+
+	fs.VarP(types.BytesSlice(&x.ImplicitChunks), builder.Build("implicitchunks"), "", "Repeated bytes flag without an explicit name")
+
+	fs.MarkDeprecated("implicitchunks", "Use --base64-chunks instead")
 
 }
 

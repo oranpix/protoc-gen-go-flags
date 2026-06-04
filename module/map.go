@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kunstack/protoc-gen-go-flags/flags"
 	pgs "github.com/lyft/protoc-gen-star/v2"
+	"github.com/oranpix/protoc-gen-go-flags/flags"
 )
 
 func (m *Module) checkMap(typ FieldType, flag *flags.MapFlag) {
@@ -87,9 +87,7 @@ func (m *Module) genMap(f pgs.Field, name pgs.Name, flag *flags.MapFlag) string 
 		return fmt.Sprint("\n// ", name, ": flags disabled by disabled=true\n")
 	}
 
-	if flag.GetName() == "" {
-		flag.Name = strings.ToLower(name.String())
-	}
+	flagName := m.flagName(name, flag)
 
 	// Determine the format to use
 	mapFormat := flag.GetFormat()
@@ -134,9 +132,9 @@ func (m *Module) genMap(f pgs.Field, name pgs.Name, flag *flags.MapFlag) string 
 	switch mapFormat {
 	case flags.MapFormatType_MAP_FORMAT_TYPE_STRING_TO_STRING:
 		_, _ = fmt.Fprintf(declBuilder, `
-				fs.StringToStringVarP(&x.%s, builder.Build(%q), %q, x.%s, %q)
-			`,
-			name, flag.GetName(), flag.GetShort(), name, flag.GetUsage(),
+					fs.StringToStringVarP(&x.%s, builder.Build(%q), %q, x.%s, %q)
+				`,
+			name, flagName, flag.GetShort(), name, flag.GetUsage(),
 		)
 
 	case flags.MapFormatType_MAP_FORMAT_TYPE_STRING_TO_INT:
@@ -148,28 +146,28 @@ func (m *Module) genMap(f pgs.Field, name pgs.Name, flag *flags.MapFlag) string 
 			_, _ = fmt.Fprintf(declBuilder, `
 					fs.StringToInt64VarP(&x.%s, builder.Build(%q), %q, x.%s, %q)
 				`,
-				name, flag.GetName(), flag.GetShort(), name, flag.GetUsage(),
+				name, flagName, flag.GetShort(), name, flag.GetUsage(),
 			)
 
 		case pgs.Int32T, pgs.SInt32, pgs.SFixed32:
 			_, _ = fmt.Fprintf(declBuilder, `
 					fs.VarP(types.StringToInt32(&x.%s), builder.Build(%q), %q, %q)
 				`,
-				name, flag.GetName(), flag.GetShort(), flag.GetUsage(),
+				name, flagName, flag.GetShort(), flag.GetUsage(),
 			)
 
 		case pgs.UInt32T, pgs.Fixed32T:
 			_, _ = fmt.Fprintf(declBuilder, `
 					fs.VarP(types.StringToUint32(&x.%s), builder.Build(%q), %q, %q)
 				`,
-				name, flag.GetName(), flag.GetShort(), flag.GetUsage(),
+				name, flagName, flag.GetShort(), flag.GetUsage(),
 			)
 
 		case pgs.UInt64T, pgs.Fixed64T:
 			_, _ = fmt.Fprintf(declBuilder, `
 					fs.VarP(types.StringToUint64(&x.%s), builder.Build(%q), %q, %q)
 				`,
-				name, flag.GetName(), flag.GetShort(), flag.GetUsage(),
+				name, flagName, flag.GetShort(), flag.GetUsage(),
 			)
 
 		default:
@@ -181,11 +179,11 @@ func (m *Module) genMap(f pgs.Field, name pgs.Name, flag *flags.MapFlag) string 
 		// For JSON format, use the existing JSON handling
 		_, _ = fmt.Fprintf(declBuilder, `
 				fs.VarP(types.JSON(&x.%s), builder.Build(%q), %q, %q)
-			`,
-			name, flag.GetName(), flag.GetShort(), flag.GetUsage(),
+				`,
+			name, flagName, flag.GetShort(), flag.GetUsage(),
 		)
 
 	}
-	declBuilder.WriteString(m.genMark(flag))
+	declBuilder.WriteString(m.genMark(flagName, flag))
 	return declBuilder.String()
 }

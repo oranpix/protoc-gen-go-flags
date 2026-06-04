@@ -1,4 +1,4 @@
-module github.com/kunstack/protoc-gen-go-flags
+module github.com/oranpix/protoc-gen-go-flags
 
 go 1.18
 

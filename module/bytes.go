@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kunstack/protoc-gen-go-flags/flags"
 	pgs "github.com/lyft/protoc-gen-star/v2"
+	"github.com/oranpix/protoc-gen-go-flags/flags"
 )
 
 // validateBytesEncoding validates the encoding type for bytes fields.
@@ -131,6 +131,7 @@ func (m *Module) genBytes(f pgs.Field, name pgs.Name, flag *flags.BytesFlag, wk 
 		wrapper       = "Bytes"
 		nativeWrapper = "BytesBase64VarP"
 		declBuilder   = &strings.Builder{}
+		flagName      = m.flagName(name, flag)
 	)
 
 	// Set wrapper based on encoding
@@ -151,15 +152,15 @@ func (m *Module) genBytes(f pgs.Field, name pgs.Name, flag *flags.BytesFlag, wk 
 		_, _ = fmt.Fprintf(declBuilder, `
 			fs.VarP(types.%s(x.%s), builder.Build(%q), %q, %q)
 		`,
-			wrapper, name, flag.GetName(), flag.GetShort(), flag.GetUsage(),
+			wrapper, name, flagName, flag.GetShort(), flag.GetUsage(),
 		)
 	} else {
 		_, _ = fmt.Fprintf(declBuilder, `
 				fs.%s(&x.%s, builder.Build(%q), %q, x.%s, %q)
 			`,
-			nativeWrapper, name, flag.GetName(), flag.GetShort(), name, flag.GetUsage())
+			nativeWrapper, name, flagName, flag.GetShort(), name, flag.GetUsage())
 	}
-	_, _ = declBuilder.WriteString(m.genMark(flag))
+	_, _ = declBuilder.WriteString(m.genMark(flagName, flag))
 	return declBuilder.String()
 }
 
@@ -181,6 +182,7 @@ func (m *Module) genBytesSlice(name pgs.Name, flag *flags.RepeatedBytesFlag) str
 	var (
 		wrapper     = "BytesSlice"
 		declBuilder = &strings.Builder{}
+		flagName    = m.flagName(name, flag)
 	)
 
 	// Set wrapper based on encoding
@@ -191,9 +193,9 @@ func (m *Module) genBytesSlice(name pgs.Name, flag *flags.RepeatedBytesFlag) str
 	_, _ = fmt.Fprintf(declBuilder, `
 			fs.VarP(types.%s(&x.%s), builder.Build(%q), %q, %q)
 		`,
-		wrapper, name, flag.GetName(), flag.GetShort(), flag.GetUsage())
+		wrapper, name, flagName, flag.GetShort(), flag.GetUsage())
 
-	_, _ = declBuilder.WriteString(m.genMark(flag))
+	_, _ = declBuilder.WriteString(m.genMark(flagName, flag))
 	return declBuilder.String()
 }
 

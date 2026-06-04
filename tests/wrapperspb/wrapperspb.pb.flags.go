@@ -3,9 +3,9 @@
 package wrapperspb
 
 import (
-	"github.com/kunstack/protoc-gen-go-flags/flags"
-	"github.com/kunstack/protoc-gen-go-flags/types"
-	"github.com/kunstack/protoc-gen-go-flags/utils"
+	"github.com/oranpix/protoc-gen-go-flags/flags"
+	"github.com/oranpix/protoc-gen-go-flags/types"
+	"github.com/oranpix/protoc-gen-go-flags/utils"
 	"github.com/spf13/pflag"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"

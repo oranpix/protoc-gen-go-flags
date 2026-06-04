@@ -106,10 +106,7 @@ func (m *Module) genCommon(f pgs.Field, name pgs.Name, flag commonFlag, wk pgs.W
 	if flag.GetDisabled() {
 		return fmt.Sprint("\n// ", name, ": flags disabled by disabled=true\n")
 	}
-	flagName := flag.GetName()
-	if flagName == "" {
-		flagName = strings.ToLower(name.String())
-	}
+	flagName := m.flagName(name, flag)
 	if wk != "" && wk != pgs.UnknownWKT {
 		_, _ = fmt.Fprintf(declBuilder, `
 				if x.%s == nil {
@@ -138,7 +135,7 @@ func (m *Module) genCommon(f pgs.Field, name pgs.Name, flag commonFlag, wk pgs.W
 			`,
 			nativeWrapper, name, flagName, flag.GetShort(), name, flag.GetUsage())
 	}
-	_, _ = declBuilder.WriteString(m.genMark(flag))
+	_, _ = declBuilder.WriteString(m.genMark(flagName, flag))
 	return declBuilder.String()
 }
 
@@ -151,17 +148,23 @@ func (m *Module) genCommonSlice(f pgs.Field, name pgs.Name, flag commonFlag, wk 
 		return fmt.Sprint("\n// ", name, ": flags disabled by disabled=true\n")
 	}
 
-	flagName := flag.GetName()
-
-	if flagName == "" {
-		flagName = strings.ToLower(name.String())
-	}
+	flagName := m.flagName(name, flag)
 
 	if wk != "" && wk != pgs.UnknownWKT {
 		_, _ = fmt.Fprintf(declBuilder, `
 				fs.VarP(types.%s(&x.%s), builder.Build(%q), %q, %q)
 			`,
 			wrapper, name, flagName, flag.GetShort(), flag.GetUsage())
+	} else if nativeWrapper == "Uint32SliceVarP" {
+		_, _ = fmt.Fprintf(declBuilder, `
+				fs.VarP(types.Uint32Slice(&x.%s), builder.Build(%q), %q, %q)
+			`,
+			name, flagName, flag.GetShort(), flag.GetUsage())
+	} else if nativeWrapper == "Uint64SliceVarP" {
+		_, _ = fmt.Fprintf(declBuilder, `
+				fs.VarP(types.Uint64Slice(&x.%s), builder.Build(%q), %q, %q)
+			`,
+			name, flagName, flag.GetShort(), flag.GetUsage())
 	} else {
 		_, _ = fmt.Fprintf(declBuilder, `
 				fs.%s(&x.%s, builder.Build(%q), %q, x.%s, %q)
@@ -169,6 +172,6 @@ func (m *Module) genCommonSlice(f pgs.Field, name pgs.Name, flag commonFlag, wk 
 			nativeWrapper, name, flagName, flag.GetShort(), name, flag.GetUsage())
 	}
 
-	_, _ = declBuilder.WriteString(m.genMark(flag))
+	_, _ = declBuilder.WriteString(m.genMark(flagName, flag))
 	return declBuilder.String()
 }

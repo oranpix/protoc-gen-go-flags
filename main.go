@@ -18,10 +18,10 @@ import (
 	"flag"
 	"os"
 
-	"github.com/kunstack/protoc-gen-go-flags/module"
-	"github.com/kunstack/protoc-gen-go-flags/version"
 	pgs "github.com/lyft/protoc-gen-star/v2"
 	pgsgo "github.com/lyft/protoc-gen-star/v2/lang/go"
+	"github.com/oranpix/protoc-gen-go-flags/module"
+	"github.com/oranpix/protoc-gen-go-flags/version"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kunstack/protoc-gen-go-flags/flags"
 	pgs "github.com/lyft/protoc-gen-star/v2"
+	"github.com/oranpix/protoc-gen-go-flags/flags"
 )
 
 func (m *Module) checkMessage(typ pgs.FieldType, flag *flags.MessageFlag) {
@@ -51,11 +51,7 @@ func (m *Module) genMessage(f pgs.Field, name pgs.Name, flag *flags.MessageFlag)
 	if !flag.GetNested() {
 		return fmt.Sprint("\n// ", name, ": flags disabled by [(flags.value).message = {nested: false}]")
 	}
-	prefix := flag.GetName()
-	if prefix == "" {
-		// use field name instead
-		prefix = strings.ToLower(f.Name().String())
-	}
+	prefix := m.messagePrefix(f, flag)
 	if flag.GetNested() {
 		_, _ = fmt.Fprintf(declBuilder, `
 				if x.%s == nil {

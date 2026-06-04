@@ -2,12 +2,13 @@ package module
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"text/template"
 
-	"github.com/kunstack/protoc-gen-go-flags/flags"
 	pgs "github.com/lyft/protoc-gen-star/v2"
 	pgsgo "github.com/lyft/protoc-gen-star/v2/lang/go"
+	"github.com/oranpix/protoc-gen-go-flags/flags"
 )
 
 func Flags() *Module {
@@ -36,6 +37,12 @@ type Module struct {
 	normalizedPaths map[string]struct{}
 }
 
+type goTypeRef struct {
+	name       string
+	importPath string
+	prefix     string
+}
+
 func (m *Module) Name() string {
 	return "flags"
 }
@@ -44,17 +51,7 @@ func (m *Module) InitContext(c pgs.BuildContext) {
 	m.ModuleBase.InitContext(c)
 	m.ctx = pgsgo.InitContext(c.Parameters())
 
-	// Initialize standard package names that might collide
-	// Based on example.go enumPackages implementation
-	m.nameCollisions = map[string]int{
-		"pflag":       0,
-		"utils":       0,
-		"types":       0,
-		"flags":       0,
-		"durationpb":  0,
-		"timestamppb": 0,
-		"wrapperspb":  0,
-	}
+	m.resetImportState()
 
 	tpl := template.New("fields").Funcs(map[string]interface{}{
 		"package": m.ctx.PackageName,
@@ -90,23 +87,7 @@ func (m *Module) InitContext(c pgs.BuildContext) {
 			return m.generateImports()
 		},
 		"enabled": func(msg pgs.Message) bool {
-			var (
-				disabled   bool
-				hasFlag    bool
-				allowEmpty bool
-			)
-			for _, field := range msg.Fields() {
-				var fd flags.FieldFlags
-				ok, err := field.Extension(flags.E_Value, &fd)
-				if err == nil && ok && !field.InRealOneOf() {
-					hasFlag = true
-					break
-				}
-			}
-			_, _ = msg.Extension(flags.E_Disabled, &disabled)
-			_, _ = msg.Extension(flags.E_AllowEmpty, &allowEmpty)
-
-			return !disabled && (hasFlag || allowEmpty)
+			return m.messageGeneratesFlagMethods(msg)
 		},
 		"flags": func(f pgs.Field) string {
 			return m.genFieldFlags(f)
@@ -129,6 +110,7 @@ func (m *Module) generate(f pgs.File) {
 	if len(f.Messages()) == 0 {
 		return
 	}
+	m.resetImportState()
 	for _, msg := range f.Messages() {
 		m.Check(msg)
 	}
@@ -146,9 +128,9 @@ package {{ package . }}
 
 import (
 	"github.com/spf13/pflag"
-	"github.com/kunstack/protoc-gen-go-flags/utils"
-    "github.com/kunstack/protoc-gen-go-flags/types"
-    "github.com/kunstack/protoc-gen-go-flags/flags"
+	"github.com/oranpix/protoc-gen-go-flags/utils"
+    "github.com/oranpix/protoc-gen-go-flags/types"
+    "github.com/oranpix/protoc-gen-go-flags/flags"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -185,10 +167,54 @@ func (x *{{ name . }}) {{ defaultMethodName . }}() {
 {{ end }}
 `
 
+func (m *Module) resetImportState() {
+	m.imports = make(map[string]struct{})
+	m.packageAliases = make(map[string]string)
+	m.normalizedPaths = make(map[string]struct{})
+
+	// Standard package names that are always imported by the generated template.
+	m.nameCollisions = map[string]int{
+		"pflag":       0,
+		"utils":       0,
+		"types":       0,
+		"flags":       0,
+		"durationpb":  0,
+		"timestamppb": 0,
+		"wrapperspb":  0,
+	}
+}
+
+func (m *Module) messageGeneratesFlagMethods(msg pgs.Message) bool {
+	var (
+		disabled   bool
+		hasFlag    bool
+		allowEmpty bool
+	)
+	for _, field := range msg.Fields() {
+		var fd flags.FieldFlags
+		ok, err := field.Extension(flags.E_Value, &fd)
+		if err == nil && ok && !field.InRealOneOf() {
+			hasFlag = true
+			break
+		}
+	}
+	_, _ = msg.Extension(flags.E_Disabled, &disabled)
+	_, _ = msg.Extension(flags.E_AllowEmpty, &allowEmpty)
+
+	return !disabled && (hasFlag || allowEmpty)
+}
+
+func (m *Module) messageGeneratesPublicAddFlags(msg pgs.Message) bool {
+	var unexported bool
+	_, _ = msg.Extension(flags.E_Unexported, &unexported)
+	return !unexported && m.messageGeneratesFlagMethods(msg)
+}
+
 // normalizeImports processes all imports and assigns aliases to packages with name collisions
 // This is based on the enumPackages implementation in example.go
 func (m *Module) normalizeImports() {
-	for importPath := range m.imports {
+	importPaths := m.sortedImportPaths()
+	for _, importPath := range importPaths {
 		if _, ok := m.normalizedPaths[importPath]; ok {
 			continue
 		}
@@ -217,7 +243,7 @@ func (m *Module) generateImports() string {
 	m.normalizeImports()
 
 	var imports strings.Builder
-	for importPath := range m.imports {
+	for _, importPath := range m.sortedImportPaths() {
 		if alias, ok := m.packageAliases[importPath]; ok {
 			imports.WriteString(fmt.Sprintf("%s \"%s\"\n", alias, importPath))
 		} else {
@@ -225,6 +251,15 @@ func (m *Module) generateImports() string {
 		}
 	}
 	return imports.String()
+}
+
+func (m *Module) sortedImportPaths() []string {
+	importPaths := make([]string, 0, len(m.imports))
+	for importPath := range m.imports {
+		importPaths = append(importPaths, importPath)
+	}
+	sort.Strings(importPaths)
+	return importPaths
 }
 
 // getPackageNameFromPath extracts the package name from an import path
@@ -236,69 +271,80 @@ func (m *Module) getPackageNameFromPath(importPath string) string {
 	return importPath
 }
 
-// getPackageAlias returns the package alias or package name for a given import path
-// This is used when generating type references to ensure we use the correct package name
-func (m *Module) getPackageAlias(importPath string) string {
-	if alias, ok := m.packageAliases[importPath]; ok {
-		return alias
+func (m *Module) formatTypeRef(ref goTypeRef) string {
+	name := ref.name
+	if ref.importPath != "" {
+		pkg := m.getPackageNameFromPath(ref.importPath)
+		if alias, ok := m.packageAliases[ref.importPath]; ok {
+			pkg = alias
+		}
+		name = pkg + "." + name
 	}
-	return m.getPackageNameFromPath(importPath)
+	return ref.prefix + name
 }
 
-// resolveTypeReference resolves a type reference string and replaces package names with aliases
-// For example, "utils.ByteSlice" might become "utils1.ByteSlice" if utils has a collision
-// For repeated types like "[]utils.ByteSlice", it becomes "[]utils1.ByteSlice"
-func (m *Module) resolveTypeReference(typeRef string, field pgs.Field) string {
-	// Handle slice types - extract the element type, resolve it, then add [] back
-	if strings.HasPrefix(typeRef, "[]") {
-		elementType := strings.TrimPrefix(typeRef, "[]")
-		resolvedElement := m.resolveTypeReference(elementType, field)
-		return "[]" + resolvedElement
-	}
+func (m *Module) typeRefForField(f pgs.Field) goTypeRef {
+	typeName := m.ctx.Type(f).Value().String()
+	ref := goTypeRef{name: typeName}
 
-	// Handle pointer types
-	if strings.HasPrefix(typeRef, "*") {
-		elementType := strings.TrimPrefix(typeRef, "*")
-		resolvedElement := m.resolveTypeReference(elementType, field)
-		return "*" + resolvedElement
-	}
-
-	// Check if the type reference contains a package qualifier (e.g., "utils.ByteSlice")
-	parts := strings.SplitN(typeRef, ".", 2)
-	if len(parts) != 2 {
-		// No package qualifier, return as-is
-		return typeRef
-	}
-
-	typeName := parts[1]
-
-	// Get the import path for this field's type
-	var importPath string
-
-	if field.Type().IsEmbed() {
-		importPath = m.ctx.ImportPath(field.Type().Embed()).String()
-	} else if field.Type().IsEnum() {
-		importPath = m.ctx.ImportPath(field.Type().Enum()).String()
-	} else if field.Type().IsRepeated() && field.Type().Element() != nil {
-		if field.Type().Element().IsEmbed() {
-			importPath = m.ctx.ImportPath(field.Type().Element().Embed()).String()
-		} else if field.Type().Element().IsEnum() {
-			importPath = m.ctx.ImportPath(field.Type().Element().Enum()).String()
+	for {
+		switch {
+		case strings.HasPrefix(ref.name, "[]"):
+			ref.prefix += "[]"
+			ref.name = strings.TrimPrefix(ref.name, "[]")
+		case strings.HasPrefix(ref.name, "*"):
+			ref.prefix += "*"
+			ref.name = strings.TrimPrefix(ref.name, "*")
+		default:
+			goto typePartsDone
 		}
 	}
 
-	// If we found an import path and has an alias, use the alias
-	alias, ok := m.packageAliases[importPath]
-	if ok && importPath != "" {
-		return fmt.Sprintf("%s.%s", alias, typeName)
+typePartsDone:
+	typ := f.Type()
+
+	if typ.IsEmbed() {
+		msg := typ.Embed()
+		ref.name = m.ctx.Name(msg).String()
+		if m.ctx.ImportPath(msg).String() != m.ctx.ImportPath(f).String() {
+			ref.importPath = m.ctx.ImportPath(msg).String()
+		}
+		return ref
 	}
-	// Return as-is if no alias found
-	return typeRef
+
+	if typ.IsEnum() {
+		enum := typ.Enum()
+		ref.name = m.ctx.Name(enum).String()
+		if m.ctx.ImportPath(enum).String() != m.ctx.ImportPath(f).String() {
+			ref.importPath = m.ctx.ImportPath(enum).String()
+		}
+		return ref
+	}
+
+	if typ.IsRepeated() && typ.Element() != nil {
+		el := typ.Element()
+		if el.IsEmbed() {
+			msg := el.Embed()
+			ref.name = m.ctx.Name(msg).String()
+			if m.ctx.ImportPath(msg).String() != m.ctx.ImportPath(f).String() {
+				ref.importPath = m.ctx.ImportPath(msg).String()
+			}
+			return ref
+		}
+		if el.IsEnum() {
+			enum := el.Enum()
+			ref.name = m.ctx.Name(enum).String()
+			if m.ctx.ImportPath(enum).String() != m.ctx.ImportPath(f).String() {
+				ref.importPath = m.ctx.ImportPath(enum).String()
+			}
+			return ref
+		}
+	}
+
+	return ref
 }
 
-// getFieldTypeName returns the type name for a field with proper package alias resolution
-// This handles repeated fields, pointer types, and package name collisions
+// getFieldTypeName returns the Go type name for a field using import aliases assigned for this file.
 func (m *Module) getFieldTypeName(f pgs.Field) string {
-	typeName := m.ctx.Type(f).Value().String()
-	return m.resolveTypeReference(typeName, f)
+	return m.formatTypeRef(m.typeRefForField(f))
 }

@@ -85,7 +85,7 @@ All examples require:
 
 Install protoc-gen-go-flags:
 ```bash
-go install github.com/kunstack/protoc-gen-go-flags@latest
+go install github.com/oranpix/protoc-gen-go-flags@latest
 ```
 
 ## Building Examples
@@ -129,7 +129,7 @@ example-name/
 
 All examples use the Buf Schema Registry approach, which is the recommended method:
 
-1. **buf.yaml** declares the dependency on `buf.build/kunstack/protoc-gen-go-flags`
+1. **buf.yaml** declares the dependency on `buf.build/oranpix/protoc-gen-go-flags`
 2. **buf.gen.yaml** configures code generation
 3. Run `buf mod update` to fetch dependencies
 4. Run `buf generate` to generate code

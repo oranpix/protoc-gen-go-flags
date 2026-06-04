@@ -1,7 +1,7 @@
 # protoc-gen-go-flags
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/kunstack/protoc-gen-go-flags)](https://goreportcard.com/report/github.com/kunstack/protoc-gen-go-flags)
-[![Go Reference](https://pkg.go.dev/badge/github.com/kunstack/protoc-gen-go-flags.svg)](https://pkg.go.dev/github.com/kunstack/protoc-gen-go-flags)
+[![Go Report Card](https://goreportcard.com/badge/github.com/oranpix/protoc-gen-go-flags)](https://goreportcard.com/report/github.com/oranpix/protoc-gen-go-flags)
+[![Go Reference](https://pkg.go.dev/badge/github.com/oranpix/protoc-gen-go-flags.svg)](https://pkg.go.dev/github.com/oranpix/protoc-gen-go-flags)
 
 中文文档 | [English](README.md)
 
@@ -95,7 +95,7 @@ config.AddFlags(fs)
 安装 protoc-gen-go-flags 插件：
 
 ```bash
-go install github.com/kunstack/protoc-gen-go-flags@latest
+go install github.com/oranpix/protoc-gen-go-flags@latest
 ```
 
 验证安装：
@@ -224,7 +224,7 @@ go get github.com/spf13/pflag
 go get google.golang.org/protobuf
 
 # 安装 protoc-gen-go-flags 运行时库
-go get github.com/kunstack/protoc-gen-go-flags/flags
+go get github.com/oranpix/protoc-gen-go-flags/flags
 ```
 
 创建项目结构：
@@ -248,7 +248,7 @@ myapp/
 ```yaml
 version: v2
 deps:
-  - buf.build/kunstack/protoc-gen-go-flags
+  - buf.build/oranpix/protoc-gen-go-flags
 lint:
   use:
     - STANDARD
@@ -279,12 +279,12 @@ buf generate
 
 #### 方式 2：直接复制文件
 
-从 [protoc-gen-go-flags 仓库](https://github.com/kunstack/protoc-gen-go-flags/tree/main/flags) 下载 `annotations.proto` 文件到您的项目：
+从 [protoc-gen-go-flags 仓库](https://github.com/oranpix/protoc-gen-go-flags/tree/main/flags) 下载 `annotations.proto` 文件到您的项目：
 
 ```bash
 mkdir -p proto/flags
 curl -o proto/flags/annotations.proto \
-  https://raw.githubusercontent.com/kunstack/protoc-gen-go-flags/main/flags/annotations.proto
+  https://raw.githubusercontent.com/oranpix/protoc-gen-go-flags/main/flags/annotations.proto
 ```
 
 项目结构更新为：
@@ -635,7 +635,7 @@ proto/config.proto:3:1: Import "flags/annotations.proto" was not found.
 - **使用 buf 方式**：确保运行了 `buf mod update` 并且 `buf.yaml` 中正确配置了依赖：
   ```yaml
   deps:
-    - buf.build/kunstack/protoc-gen-go-flags
+    - buf.build/oranpix/protoc-gen-go-flags
   ```
 
 - **使用 protoc 方式**：确保在 protoc 命令中包含正确的导入路径：
@@ -653,9 +653,9 @@ undefined: types.Duration
 
 **解决方案**：确保已安装运行时库：
 ```bash
-go get github.com/kunstack/protoc-gen-go-flags/flags
-go get github.com/kunstack/protoc-gen-go-flags/types
-go get github.com/kunstack/protoc-gen-go-flags/utils
+go get github.com/oranpix/protoc-gen-go-flags/flags
+go get github.com/oranpix/protoc-gen-go-flags/types
+go get github.com/oranpix/protoc-gen-go-flags/utils
 ```
 
 生成的代码会自动导入这些包，无需手动导入。
@@ -684,7 +684,7 @@ Failure: plugin flags: not found
 **解决方案**：确保 protoc-gen-go-flags 已安装并在 PATH 中：
 ```bash
 # 安装插件
-go install github.com/kunstack/protoc-gen-go-flags@latest
+go install github.com/oranpix/protoc-gen-go-flags@latest
 
 # 验证安装
 which protoc-gen-go-flags
@@ -1208,7 +1208,7 @@ config.AddFlags(fs,
 ### Q: 如何在现有项目中集成 protoc-gen-go-flags？
 
 **A:** 按照以下步骤：
-1. 安装插件：`go install github.com/kunstack/protoc-gen-go-flags@latest`
+1. 安装插件：`go install github.com/oranpix/protoc-gen-go-flags@latest`
 2. 复制 `annotations.proto` 到您的项目
 3. 在 `.proto` 文件中添加标志注解
 4. 运行 `protoc` 生成代码
@@ -1264,11 +1264,11 @@ config.AddFlags(fs,
 **A:** 您需要安装并导入运行时库：
 
 ```bash
-go get github.com/kunstack/protoc-gen-go-flags/flags
+go get github.com/oranpix/protoc-gen-go-flags/flags
 ```
 
 ```go
-import "github.com/kunstack/protoc-gen-go-flags/flags"
+import "github.com/oranpix/protoc-gen-go-flags/flags"
 ```
 
 ### Q: 如何跳过特定字段的标志生成？
@@ -1346,7 +1346,7 @@ protoc \
 
 欢迎贡献！如果您有建议或发现问题，请：
 
-- 提交 Issue：[GitHub Issues](https://github.com/kunstack/protoc-gen-go-flags/issues)
+- 提交 Issue：[GitHub Issues](https://github.com/oranpix/protoc-gen-go-flags/issues)
 - 提交 Pull Request：Fork 项目并创建 PR
 - 改进文档：帮助完善文档和示例
 

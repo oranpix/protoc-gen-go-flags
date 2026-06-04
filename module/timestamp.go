@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kunstack/protoc-gen-go-flags/flags"
-	"github.com/kunstack/protoc-gen-go-flags/utils"
 	pgs "github.com/lyft/protoc-gen-star/v2"
+	"github.com/oranpix/protoc-gen-go-flags/flags"
+	"github.com/oranpix/protoc-gen-go-flags/utils"
 	"github.com/samber/lo"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -120,7 +120,6 @@ func (m *Module) genTimestampDefaults(f pgs.Field, name pgs.Name, flag *flags.Ti
 		name, name, timeBuilder.String(),
 	)
 
-	_, _ = declBuilder.WriteString(m.genMark(flag))
 	return declBuilder.String()
 }
 
@@ -162,9 +161,7 @@ func (m *Module) genTimestamp(f pgs.Field, name pgs.Name, flag *flags.TimestampF
 	if flag.GetDisabled() {
 		return fmt.Sprint("\n// ", name, ": flags disabled by disabled=true\n")
 	}
-	if flag.GetName() == "" {
-		flag.Name = strings.ToLower(name.String())
-	}
+	flagName := m.flagName(name, flag)
 	_, _ = fmt.Fprint(formatsBuilder,
 		`[]string{`,
 		strings.Join(
@@ -190,10 +187,10 @@ func (m *Module) genTimestamp(f pgs.Field, name pgs.Name, flag *flags.TimestampF
 	_, _ = fmt.Fprintf(declBuilder, `
 		fs.VarP(types.Timestamp(x.%s, %s), builder.Build(%q), %q, %q)
 	`,
-		name, formatsBuilder.String(), flag.GetName(), flag.GetShort(), flag.GetUsage(),
+		name, formatsBuilder.String(), flagName, flag.GetShort(), flag.GetUsage(),
 	)
 
-	_, _ = declBuilder.WriteString(m.genMark(flag))
+	_, _ = declBuilder.WriteString(m.genMark(flagName, flag))
 	return declBuilder.String()
 }
 
@@ -205,9 +202,7 @@ func (m *Module) genTimestampSlice(f pgs.Field, name pgs.Name, flag *flags.Repea
 	if flag.GetDisabled() {
 		return fmt.Sprint("\n// ", name, ": flags disabled by disabled=true\n")
 	}
-	if flag.GetName() == "" {
-		flag.Name = strings.ToLower(name.String())
-	}
+	flagName := m.flagName(name, flag)
 	_, _ = fmt.Fprint(formatsBuilder,
 		`[]string{`,
 		strings.Join(
@@ -225,9 +220,9 @@ func (m *Module) genTimestampSlice(f pgs.Field, name pgs.Name, flag *flags.Repea
 	_, _ = fmt.Fprintf(declBuilder, `
 		fs.VarP(types.TimestampSlice(&x.%s, %s), builder.Build(%q), %q, %q)
 	`,
-		name, formatsBuilder.String(), flag.GetName(), flag.GetShort(), flag.GetUsage(),
+		name, formatsBuilder.String(), flagName, flag.GetShort(), flag.GetUsage(),
 	)
 
-	_, _ = declBuilder.WriteString(m.genMark(flag))
+	_, _ = declBuilder.WriteString(m.genMark(flagName, flag))
 	return declBuilder.String()
 }

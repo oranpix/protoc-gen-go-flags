@@ -1,8 +1,8 @@
 package module
 
 import (
-	"github.com/kunstack/protoc-gen-go-flags/flags"
 	pgs "github.com/lyft/protoc-gen-star/v2"
+	"github.com/oranpix/protoc-gen-go-flags/flags"
 	"google.golang.org/protobuf/runtime/protoimpl"
 )
 
@@ -19,6 +19,14 @@ type Repeatable interface {
 
 type Element interface {
 	Element() pgs.FieldTypeElem
+}
+
+type fieldFlagInfo struct {
+	name       string
+	short      string
+	disabled   bool
+	message    *flags.MessageFlag
+	hasMessage bool
 }
 
 // shouldGenerate checks if a proto file contains any flag-related options
@@ -99,6 +107,7 @@ func (m *Module) Check(msg pgs.Message) {
 
 	// Check for duplicate flag names within this message
 	m.checkFlagName(msg)
+	m.checkNestedFlagRegistration(msg)
 
 	for _, f := range msg.Fields() {
 		m.Push(f.Name().String())
@@ -113,146 +122,210 @@ func (m *Module) Check(msg pgs.Message) {
 }
 
 func (m *Module) checkFlagName(msg pgs.Message) {
-	// Track flag names to detect duplicates
-	flagNames := make(map[string]string) // flag name -> field name
+	flagNames := make(map[string]string)
+	shortNames := make(map[string]string)
 
 	for _, f := range msg.Fields() {
-		flagName := m.getFlagName(f)
-		if flagName == "" {
-			continue // Skip if no flag name
+		info, ok := m.getFieldFlagInfo(f)
+		if !ok || info.disabled {
+			continue
 		}
 
-		if existingField, exists := flagNames[flagName]; exists {
-			m.Failf("duplicate flag name '%s' found in message '%s': field '%s' and field '%s' both use this flag name",
-				flagName, msg.Name().String(), existingField, f.Name().String())
+		if info.name != "" {
+			if existingField, exists := flagNames[info.name]; exists {
+				m.Failf("duplicate flag name '%s' found in message '%s': field '%s' and field '%s' both use this flag name",
+					info.name, msg.Name().String(), existingField, f.Name().String())
+			}
+			flagNames[info.name] = f.Name().String()
 		}
 
-		flagNames[flagName] = f.Name().String()
+		if info.short == "" {
+			continue
+		}
+		if len(info.short) != 1 || info.short[0] > 127 {
+			m.Failf("short flag '%s' found in message '%s' field '%s' must be exactly one ASCII character",
+				info.short, msg.Name().String(), f.Name().String())
+		}
+		if existingField, exists := shortNames[info.short]; exists {
+			m.Failf("duplicate short flag '%s' found in message '%s': field '%s' and field '%s' both use this short flag",
+				info.short, msg.Name().String(), existingField, f.Name().String())
+		}
+		shortNames[info.short] = f.Name().String()
 	}
 }
 
-// getFlagName extracts the flag name from a protobuf field's flag configuration.
-// It returns the custom flag name if specified, otherwise returns the field name.
-// Returns empty string if the field is disabled or has no flag configuration.
-func (m *Module) getFlagName(f pgs.Field) string {
+func (m *Module) checkNestedFlagRegistration(msg pgs.Message) {
+	longNames := make(map[string]string)
+	shortNames := make(map[string]string)
+	m.collectRegisteredFlags(msg, "", msg.Name().String(), longNames, shortNames)
+}
+
+func (m *Module) collectRegisteredFlags(msg pgs.Message, prefix, path string, longNames, shortNames map[string]string) {
+	for _, f := range msg.Fields() {
+		if f.InRealOneOf() {
+			continue
+		}
+
+		info, ok := m.getFieldFlagInfo(f)
+		if !ok || info.disabled {
+			continue
+		}
+
+		fieldPath := path + "." + f.Name().String()
+		if info.hasMessage {
+			if info.message == nil || !info.message.GetNested() {
+				continue
+			}
+			if !f.Type().IsEmbed() || f.Type().Embed() == nil {
+				continue
+			}
+			if !m.messageGeneratesPublicAddFlags(f.Type().Embed()) {
+				continue
+			}
+			nextPrefix := joinFlagPath(prefix, m.messagePrefix(f, info.message))
+			m.collectRegisteredFlags(f.Type().Embed(), nextPrefix, fieldPath, longNames, shortNames)
+			continue
+		}
+
+		if info.name != "" {
+			fullName := joinFlagPath(prefix, info.name)
+			if existingField, exists := longNames[fullName]; exists {
+				m.Failf("duplicate flag name '%s' found in AddFlags tree rooted at message '%s': field '%s' and field '%s' both register this flag name",
+					fullName, msg.Name().String(), existingField, fieldPath)
+			}
+			longNames[fullName] = fieldPath
+		}
+
+		if info.short == "" {
+			continue
+		}
+		if existingField, exists := shortNames[info.short]; exists {
+			m.Failf("duplicate short flag '%s' found in AddFlags tree rooted at message '%s': field '%s' and field '%s' both register this short flag",
+				info.short, msg.Name().String(), existingField, fieldPath)
+		}
+		shortNames[info.short] = fieldPath
+	}
+}
+
+func joinFlagPath(prefix, name string) string {
+	if prefix == "" {
+		return name
+	}
+	if name == "" {
+		return prefix
+	}
+	return prefix + "." + name
+}
+
+func (m *Module) getFieldFlagInfo(f pgs.Field) (fieldFlagInfo, bool) {
 	var field flags.FieldFlags
 	ok, err := f.Extension(flags.E_Value, &field)
 	if err != nil || !ok {
-		return ""
+		return fieldFlagInfo{}, false
 	}
 
-	// Extract flag name from the specific flag type
 	switch r := field.Type.(type) {
 	case *flags.FieldFlags_Float:
-		return m.getNameFromCommonFlag(r.Float, f.Name().String())
+		return m.infoFromCommonFlag(f, r.Float), true
 	case *flags.FieldFlags_Double:
-		return m.getNameFromCommonFlag(r.Double, f.Name().String())
+		return m.infoFromCommonFlag(f, r.Double), true
 	case *flags.FieldFlags_Int32:
-		return m.getNameFromCommonFlag(r.Int32, f.Name().String())
+		return m.infoFromCommonFlag(f, r.Int32), true
 	case *flags.FieldFlags_Int64:
-		return m.getNameFromCommonFlag(r.Int64, f.Name().String())
+		return m.infoFromCommonFlag(f, r.Int64), true
 	case *flags.FieldFlags_Uint32:
-		return m.getNameFromCommonFlag(r.Uint32, f.Name().String())
+		return m.infoFromCommonFlag(f, r.Uint32), true
 	case *flags.FieldFlags_Uint64:
-		return m.getNameFromCommonFlag(r.Uint64, f.Name().String())
+		return m.infoFromCommonFlag(f, r.Uint64), true
 	case *flags.FieldFlags_Sint32:
-		return m.getNameFromCommonFlag(r.Sint32, f.Name().String())
+		return m.infoFromCommonFlag(f, r.Sint32), true
 	case *flags.FieldFlags_Sint64:
-		return m.getNameFromCommonFlag(r.Sint64, f.Name().String())
+		return m.infoFromCommonFlag(f, r.Sint64), true
 	case *flags.FieldFlags_Fixed32:
-		return m.getNameFromCommonFlag(r.Fixed32, f.Name().String())
+		return m.infoFromCommonFlag(f, r.Fixed32), true
 	case *flags.FieldFlags_Fixed64:
-		return m.getNameFromCommonFlag(r.Fixed64, f.Name().String())
+		return m.infoFromCommonFlag(f, r.Fixed64), true
 	case *flags.FieldFlags_Sfixed32:
-		return m.getNameFromCommonFlag(r.Sfixed32, f.Name().String())
+		return m.infoFromCommonFlag(f, r.Sfixed32), true
 	case *flags.FieldFlags_Sfixed64:
-		return m.getNameFromCommonFlag(r.Sfixed64, f.Name().String())
+		return m.infoFromCommonFlag(f, r.Sfixed64), true
 	case *flags.FieldFlags_Bool:
-		return m.getNameFromCommonFlag(r.Bool, f.Name().String())
+		return m.infoFromCommonFlag(f, r.Bool), true
 	case *flags.FieldFlags_String_:
-		return m.getNameFromCommonFlag(r.String_, f.Name().String())
+		return m.infoFromCommonFlag(f, r.String_), true
 	case *flags.FieldFlags_Bytes:
-		return m.getNameFromCommonFlag(r.Bytes, f.Name().String())
+		return m.infoFromCommonFlag(f, r.Bytes), true
 	case *flags.FieldFlags_Enum:
-		return m.getNameFromCommonFlag(r.Enum, f.Name().String())
+		return m.infoFromCommonFlag(f, r.Enum), true
 	case *flags.FieldFlags_Duration:
-		return m.getNameFromCommonFlag(r.Duration, f.Name().String())
+		return m.infoFromCommonFlag(f, r.Duration), true
 	case *flags.FieldFlags_Timestamp:
-		return m.getNameFromCommonFlag(r.Timestamp, f.Name().String())
+		return m.infoFromCommonFlag(f, r.Timestamp), true
 	case *flags.FieldFlags_Repeated:
-		return m.getNameFromRepeatedFlag(r.Repeated, f.Name().String())
+		return m.infoFromRepeatedFlag(f, r.Repeated), true
 	case *flags.FieldFlags_Map:
-		return m.getNameFromCommonFlag(r.Map, f.Name().String())
+		return m.infoFromCommonFlag(f, r.Map), true
 	case *flags.FieldFlags_Message:
-		return "" // Skip Message types
+		return fieldFlagInfo{message: r.Message, hasMessage: true}, true
 	default:
-		return ""
+		return fieldFlagInfo{}, false
 	}
 }
 
-// getNameFromCommonFlag extracts the flag name from a common flag configuration.
-// Returns the custom flag name if specified, otherwise returns the fallback name.
-// Returns empty string if the flag is disabled or nil.
-func (m *Module) getNameFromCommonFlag(flag commonFlag, fallbackName string) string {
+func (m *Module) infoFromCommonFlag(f pgs.Field, flag commonFlag) fieldFlagInfo {
 	if flag == nil || flag.GetDisabled() {
-		return ""
+		return fieldFlagInfo{disabled: true}
 	}
-
-	if flag.GetName() != "" {
-		return flag.GetName()
+	return fieldFlagInfo{
+		name:  m.fieldFlagName(f, flag),
+		short: flag.GetShort(),
 	}
-
-	// If no custom name is provided, use the field name as fallback
-	return fallbackName
 }
 
-// getNameFromRepeatedFlag extracts the flag name from a repeated flag configuration.
-// Returns the custom flag name if specified, otherwise returns the fallback name.
-// Returns empty string if the flag is disabled or nil.
-func (m *Module) getNameFromRepeatedFlag(flag *flags.RepeatedFlags, fallbackName string) string {
+func (m *Module) infoFromRepeatedFlag(f pgs.Field, flag *flags.RepeatedFlags) fieldFlagInfo {
 	if flag == nil {
-		return ""
+		return fieldFlagInfo{disabled: true}
 	}
 
 	switch r := flag.Type.(type) {
 	case *flags.RepeatedFlags_Float:
-		return m.getNameFromCommonFlag(r.Float, fallbackName)
+		return m.infoFromCommonFlag(f, r.Float)
 	case *flags.RepeatedFlags_Double:
-		return m.getNameFromCommonFlag(r.Double, fallbackName)
+		return m.infoFromCommonFlag(f, r.Double)
 	case *flags.RepeatedFlags_Int32:
-		return m.getNameFromCommonFlag(r.Int32, fallbackName)
+		return m.infoFromCommonFlag(f, r.Int32)
 	case *flags.RepeatedFlags_Int64:
-		return m.getNameFromCommonFlag(r.Int64, fallbackName)
+		return m.infoFromCommonFlag(f, r.Int64)
 	case *flags.RepeatedFlags_Uint32:
-		return m.getNameFromCommonFlag(r.Uint32, fallbackName)
+		return m.infoFromCommonFlag(f, r.Uint32)
 	case *flags.RepeatedFlags_Uint64:
-		return m.getNameFromCommonFlag(r.Uint64, fallbackName)
+		return m.infoFromCommonFlag(f, r.Uint64)
 	case *flags.RepeatedFlags_Sint32:
-		return m.getNameFromCommonFlag(r.Sint32, fallbackName)
+		return m.infoFromCommonFlag(f, r.Sint32)
 	case *flags.RepeatedFlags_Sint64:
-		return m.getNameFromCommonFlag(r.Sint64, fallbackName)
+		return m.infoFromCommonFlag(f, r.Sint64)
 	case *flags.RepeatedFlags_Fixed32:
-		return m.getNameFromCommonFlag(r.Fixed32, fallbackName)
+		return m.infoFromCommonFlag(f, r.Fixed32)
 	case *flags.RepeatedFlags_Fixed64:
-		return m.getNameFromCommonFlag(r.Fixed64, fallbackName)
+		return m.infoFromCommonFlag(f, r.Fixed64)
 	case *flags.RepeatedFlags_Sfixed32:
-		return m.getNameFromCommonFlag(r.Sfixed32, fallbackName)
+		return m.infoFromCommonFlag(f, r.Sfixed32)
 	case *flags.RepeatedFlags_Sfixed64:
-		return m.getNameFromCommonFlag(r.Sfixed64, fallbackName)
+		return m.infoFromCommonFlag(f, r.Sfixed64)
 	case *flags.RepeatedFlags_Bool:
-		return m.getNameFromCommonFlag(r.Bool, fallbackName)
+		return m.infoFromCommonFlag(f, r.Bool)
 	case *flags.RepeatedFlags_String_:
-		return m.getNameFromCommonFlag(r.String_, fallbackName)
+		return m.infoFromCommonFlag(f, r.String_)
 	case *flags.RepeatedFlags_Bytes:
-		return m.getNameFromCommonFlag(r.Bytes, fallbackName)
+		return m.infoFromCommonFlag(f, r.Bytes)
 	case *flags.RepeatedFlags_Enum:
-		return m.getNameFromCommonFlag(r.Enum, fallbackName)
+		return m.infoFromCommonFlag(f, r.Enum)
 	case *flags.RepeatedFlags_Duration:
-		return m.getNameFromCommonFlag(r.Duration, fallbackName)
+		return m.infoFromCommonFlag(f, r.Duration)
 	case *flags.RepeatedFlags_Timestamp:
-		return m.getNameFromCommonFlag(r.Timestamp, fallbackName)
+		return m.infoFromCommonFlag(f, r.Timestamp)
 	default:
-		return ""
+		return fieldFlagInfo{}
 	}
 }
 
@@ -368,7 +441,7 @@ func (m *Module) CheckRepeatedFlag(typ FieldType, repeated *flags.RepeatedFlags)
 	case *flags.RepeatedFlags_Uint32:
 		m.checkCommon(typ, r.Uint32, pgs.UInt32T, pgs.UInt32ValueWKT, true)
 	case *flags.RepeatedFlags_Uint64:
-		m.checkCommon(typ, r.Uint64, pgs.UInt64T, pgs.UInt32ValueWKT, true)
+		m.checkCommon(typ, r.Uint64, pgs.UInt64T, pgs.UInt64ValueWKT, true)
 	case *flags.RepeatedFlags_Sint32:
 		m.checkCommon(typ, r.Sint32, pgs.SInt32, pgs.UnknownWKT, true)
 	case *flags.RepeatedFlags_Sint64:

@@ -3,8 +3,8 @@ package module
 import (
 	"fmt"
 
-	"github.com/kunstack/protoc-gen-go-flags/flags"
 	pgs "github.com/lyft/protoc-gen-star/v2"
+	"github.com/oranpix/protoc-gen-go-flags/flags"
 )
 
 func (m *Module) genFieldDefaults(f pgs.Field) string {

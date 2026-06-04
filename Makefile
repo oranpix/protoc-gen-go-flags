@@ -11,7 +11,7 @@ COMMIT ?= $(shell git rev-parse --short HEAD)
 BUILD_DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # Build-time ldflags for version injection
-LDFLAGS = -X musecut.com/musecut/pkg/version.gitVersion=$(VERSION)
+LDFLAGS = -X github.com/oranpix/protoc-gen-go-flags/version.gitVersion=$(VERSION)
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(GOBIN))
